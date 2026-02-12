@@ -1,0 +1,26 @@
+[
+  {
+    "id": "iphone-13-pro-256-sierra",
+    "name": "iPhone 13 Pro",
+    "details": "256GB • Sierra Blue • Unlocked • Refurbished",
+    "price_cents": 55900,
+    "img": "https://via.placeholder.com/900x700?text=iPhone+13+Pro",
+    "in_stock": true
+  },
+  {
+    "id": "iphone-12-128-black",
+    "name": "iPhone 12",
+    "details": "128GB • Black • Unlocked • Refurbished",
+    "price_cents": 32900,
+    "img": "https://via.placeholder.com/900x700?text=iPhone+12",
+    "in_stock": true
+  },
+  {
+    "id": "galaxy-s23-128-phantom",
+    "name": "Samsung Galaxy S23",
+    "details": "128GB • Phantom Black • Unlocked • Refurbished",
+    "price_cents": 49900,
+    "img": "https://via.placeholder.com/900x700?text=Galaxy+S23",
+    "in_stock": true
+  }
+]
