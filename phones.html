@@ -1,95 +1,506 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CETS Mobile Sales</title>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>CETS Mobile Sales — Refurbished Unlocked Phones</title>
   <style>
-    body {
-      margin: 0;
-      font-family: system-ui, Arial;
-      background: #0f172a;
-      color: white;
-      padding: 40px 20px;
+    :root{
+      --bg1:#0b1220;
+      --bg2:#020617;
+      --card: rgba(15,23,42,.72);
+      --border: rgba(148,163,184,.16);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --blue:#3b82f6;
+      --green:#10b981;
+      --red:#ef4444;
+      --amber:#f59e0b;
+      --shadow: 0 26px 70px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background: radial-gradient(circle at 20% 10%, #12214b 0%, var(--bg1) 30%, var(--bg2) 82%);
+      min-height:100vh;
+      padding: 22px 16px 70px;
+    }
+    .wrap{ max-width: 1160px; margin:0 auto; }
+    .top{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      margin-bottom: 16px;
+    }
+    h1{
+      margin:0;
+      font-size: 40px;
+      font-weight: 950;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin-top: 6px;
+      color: var(--muted);
+      font-weight: 700;
+      line-height:1.25;
     }
 
-    .wrap {
-      max-width: 1100px;
-      margin: auto;
+    .bar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+      margin-top: 6px;
     }
-
-    h1 {
-      font-size: 42px;
+    .pill{
+      display:inline-flex; gap:10px; align-items:center;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.22);
       font-weight: 900;
-      margin-bottom: 20px;
+      white-space:nowrap;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
     }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: #1e293b;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.5);
-    }
-
-    .card img {
-      width: 100%;
+    .btn{
+      border:none;
       border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 950;
+      cursor:pointer;
+      color:white;
+      background: rgba(148,163,184,.18);
+      border: 1px solid rgba(148,163,184,.16);
+      box-shadow: 0 12px 26px rgba(0,0,0,.30);
+      transition: transform .1s ease, box-shadow .12s ease, opacity .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 16px 30px rgba(0,0,0,.38); }
+    .btn:active{ transform: translateY(0); }
+    .btn.blue{ background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.90)); border-color: rgba(59,130,246,.25); }
+    .btn.green{ background: linear-gradient(180deg, rgba(16,185,129,.95), rgba(5,150,105,.90)); border-color: rgba(16,185,129,.25); }
+    .btn.red{ background: linear-gradient(180deg, rgba(239,68,68,.95), rgba(220,38,38,.90)); border-color: rgba(239,68,68,.25); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    .grid{
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
     }
 
-    .price {
-      font-size: 20px;
+    .shop, .cart{
+      background: linear-gradient(180deg, rgba(17,29,56,.75), rgba(8,15,35,.75));
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .shopHead, .cartHead{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .shopHead b, .cartHead b{ font-size: 14px; letter-spacing:.2px; }
+    .controls{
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .input, .select{
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 0 12px;
+      outline:none;
       font-weight: 900;
-      margin-top: 10px;
-      color: #10b981;
+      min-width: 220px;
+    }
+    .input:focus, .select:focus{
+      border-color: rgba(59,130,246,.75);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.22);
     }
 
-    .btn {
-      margin-top: 12px;
-      padding: 12px;
-      border: none;
+    .cards{
+      padding: 14px;
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .card{
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(0,0,0,.22);
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 14px 30px rgba(0,0,0,.28);
+      display:flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .img{
+      width:100%;
+      height: 180px;
+      background: rgba(2,6,23,.65);
+      overflow:hidden;
+    }
+    .img img{
+      width:100%; height:100%; object-fit: cover; display:block;
+    }
+    .pad{ padding: 12px; display:flex; flex-direction:column; gap: 8px; flex: 1; }
+    .name{ font-weight: 1000; font-size: 16px; }
+    .details{ color: var(--muted); font-weight: 800; font-size: 12px; line-height:1.25; }
+    .priceRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; }
+    .price{ font-weight: 1000; font-size: 16px; color: #a7f3d0; }
+    .stock{
+      font-size: 12px;
+      font-weight: 950;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(148,163,184,.10);
+      color: rgba(226,232,240,.92);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .stock.ok{ border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.12); color: #b7ffdf; }
+    .stock.bad{ border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.12); color: #ffd1d1; }
+
+    .cartBody{ padding: 12px 14px; }
+    .cartEmpty{
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px dashed rgba(148,163,184,.22);
+      background: rgba(0,0,0,.18);
+    }
+    .item{
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(0,0,0,.20);
+      margin-bottom: 10px;
+    }
+    .itemTop{ display:flex; justify-content:space-between; gap:10px; }
+    .itemName{ font-weight: 1000; }
+    .itemDetails{ color: var(--muted); font-weight: 800; font-size: 12px; margin-top: 2px; }
+    .itemBottom{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top: 8px; }
+    .qtyRow{ display:flex; gap:8px; align-items:center; }
+    .qtyBtn{
+      width: 38px; height: 38px;
       border-radius: 12px;
-      font-weight: 900;
-      cursor: pointer;
-      width: 100%;
-      background: #3b82f6;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(148,163,184,.14);
       color: white;
+      font-weight: 1000;
+      cursor:pointer;
     }
-
-    .btn:hover {
-      background: #2563eb;
+    .qtyVal{
+      min-width: 34px;
+      text-align:center;
+      font-weight: 1000;
     }
+    .miniBtn{
+      height: 38px;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-weight: 950;
+      border: 1px solid rgba(239,68,68,.22);
+      background: rgba(239,68,68,.12);
+      color: #ffd1d1;
+      cursor:pointer;
+    }
+    .summary{
+      margin-top: 12px;
+      border-top: 1px solid rgba(148,163,184,.12);
+      padding-top: 12px;
+    }
+    .sumRow{ display:flex; justify-content:space-between; margin-bottom: 8px; font-weight: 900; }
+    .sumRow span:last-child{ font-weight: 1000; }
+    .fine{ color: var(--muted); font-weight: 800; font-size: 12px; line-height:1.25; }
   </style>
 </head>
 <body>
-
-<div class="wrap">
-  <h1>CETS Mobile Sales</h1>
-
-  <div class="grid">
-
-    <div class="card">
-      <img src="https://via.placeholder.com/400x300" alt="iPhone 14">
-      <h3>iPhone 14</h3>
-      <div class="price">$499</div>
-      <button class="btn">Buy Now</button>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>CETS Mobile Sales</h1>
+        <div class="sub">Refurbished • Unlocked • Shipping Available</div>
+      </div>
+      <div class="bar">
+        <div class="pill" id="cartPill">🛒 Cart: <span id="cartCount">0</span></div>
+        <button class="btn gray" id="btnClearCart">Clear Cart</button>
+        <a class="btn blue" href="checkout.html" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Checkout</a>
+      </div>
     </div>
 
-    <div class="card">
-      <img src="https://via.placeholder.com/400x300" alt="Samsung Galaxy S23">
-      <h3>Samsung Galaxy S23</h3>
-      <div class="price">$549</div>
-      <button class="btn">Buy Now</button>
-    </div>
+    <div class="grid">
+      <!-- SHOP -->
+      <div class="shop">
+        <div class="shopHead">
+          <b>Available Phones</b>
+          <span class="fine" id="statusLine">Loading products…</span>
+        </div>
 
+        <div class="controls">
+          <input id="search" class="input" placeholder="Search iPhone, Galaxy, storage, color..." />
+          <select id="sort" class="select">
+            <option value="featured">Sort: Featured</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="price_desc">Price: High → Low</option>
+            <option value="name_asc">Name: A → Z</option>
+          </select>
+        </div>
+
+        <div class="cards" id="cards"></div>
+      </div>
+
+      <!-- CART -->
+      <div class="cart">
+        <div class="cartHead">
+          <b>Your Cart</b>
+          <span class="fine" id="cartSub">Saved in this browser</span>
+        </div>
+
+        <div class="cartBody">
+          <div id="cartItems"></div>
+
+          <div class="summary">
+            <div class="sumRow"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+            <div class="sumRow"><span>Shipping</span><span class="fine">Calculated at checkout</span></div>
+            <div class="sumRow"><span>Tax</span><span class="fine">Calculated at checkout</span></div>
+
+            <button class="btn green" id="btnCheckout" style="width:100%;margin-top:10px;">Go to Checkout</button>
+            <div class="fine" style="margin-top:10px;">
+              Your cart is stored locally. On the next step we’ll collect shipping address and payment securely with Stripe.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
+  <script>
+    /**************************************************************
+     * Cart store (localStorage)
+     **************************************************************/
+    const CART_KEY = "cets_phone_cart_v1";
+
+    function loadCart(){
+      try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveCart(cart){
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }
+
+    function money(cents){
+      return (cents/100).toLocaleString("en-US",{style:"currency",currency:"USD"});
+    }
+
+    /**************************************************************
+     * Products
+     **************************************************************/
+    let products = [];
+    let cart = loadCart(); // [{id, qty}]
+    const $ = (id) => document.getElementById(id);
+
+    const cardsEl = $("cards");
+    const statusLine = $("statusLine");
+    const cartItemsEl = $("cartItems");
+    const cartCountEl = $("cartCount");
+    const subtotalEl = $("subtotal");
+
+    function cartCount(){
+      return cart.reduce((a,i)=>a+i.qty,0);
+    }
+    function cartSubtotal(){
+      let sum = 0;
+      for (const it of cart){
+        const p = products.find(x => x.id === it.id);
+        if (p) sum += p.price_cents * it.qty;
+      }
+      return sum;
+    }
+
+    function upsertCart(id, delta){
+      const idx = cart.findIndex(x => x.id === id);
+      if (idx === -1 && delta > 0){
+        cart.push({ id, qty: delta });
+      } else if (idx !== -1){
+        cart[idx].qty += delta;
+        if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      }
+      saveCart(cart);
+      renderCart();
+    }
+
+    function removeFromCart(id){
+      cart = cart.filter(x => x.id !== id);
+      saveCart(cart);
+      renderCart();
+    }
+
+    function clearCart(){
+      cart = [];
+      saveCart(cart);
+      renderCart();
+    }
+
+    function renderCart(){
+      cartCountEl.textContent = String(cartCount());
+      subtotalEl.textContent = money(cartSubtotal());
+
+      if (!cart.length){
+        cartItemsEl.innerHTML = `<div class="cartEmpty">Cart is empty. Add a phone to continue.</div>`;
+        $("btnCheckout").disabled = true;
+        return;
+      }
+
+      $("btnCheckout").disabled = false;
+
+      cartItemsEl.innerHTML = cart.map(it => {
+        const p = products.find(x => x.id === it.id);
+        if (!p) return "";
+        return `
+          <div class="item">
+            <div class="itemTop">
+              <div>
+                <div class="itemName">${escapeHTML(p.name)}</div>
+                <div class="itemDetails">${escapeHTML(p.details)}</div>
+              </div>
+              <div class="price">${money(p.price_cents)}</div>
+            </div>
+
+            <div class="itemBottom">
+              <div class="qtyRow">
+                <button class="qtyBtn" data-act="dec" data-id="${p.id}">−</button>
+                <div class="qtyVal">${it.qty}</div>
+                <button class="qtyBtn" data-act="inc" data-id="${p.id}">+</button>
+              </div>
+              <button class="miniBtn" data-act="remove" data-id="${p.id}">Remove</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      cartItemsEl.querySelectorAll("button").forEach(btn => {
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        btn.addEventListener("click", () => {
+          if (act === "inc") upsertCart(id, +1);
+          if (act === "dec") upsertCart(id, -1);
+          if (act === "remove") removeFromCart(id);
+        });
+      });
+    }
+
+    function escapeHTML(s){
+      return String(s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function getFiltered(){
+      const q = ($("search").value || "").trim().toLowerCase();
+      const sort = $("sort").value;
+
+      let arr = [...products];
+
+      if (q){
+        arr = arr.filter(p => {
+          const hay = `${p.name} ${p.details}`.toLowerCase();
+          return hay.includes(q);
+        });
+      }
+
+      if (sort === "price_asc") arr.sort((a,b)=>a.price_cents-b.price_cents);
+      if (sort === "price_desc") arr.sort((a,b)=>b.price_cents-a.price_cents);
+      if (sort === "name_asc") arr.sort((a,b)=>a.name.localeCompare(b.name));
+      // featured: keep order as in JSON
+
+      return arr;
+    }
+
+    function renderProducts(){
+      const arr = getFiltered();
+      statusLine.textContent = `Showing ${arr.length} item(s)`;
+
+      cardsEl.innerHTML = arr.map(p => {
+        const inStock = !!p.in_stock;
+        const stockPill = inStock
+          ? `<span class="stock ok">✅ In Stock</span>`
+          : `<span class="stock bad">⛔ Out of Stock</span>`;
+
+        return `
+          <div class="card">
+            <div class="img">
+              <img src="${escapeHTML(p.img)}" alt="${escapeHTML(p.name)}" loading="lazy" />
+            </div>
+            <div class="pad">
+              <div class="name">${escapeHTML(p.name)}</div>
+              <div class="details">${escapeHTML(p.details)}</div>
+
+              <div class="priceRow">
+                <div class="price">${money(p.price_cents)}</div>
+                ${stockPill}
+              </div>
+
+              <button class="btn ${inStock ? "blue" : ""}" data-act="add" data-id="${p.id}" ${inStock ? "" : "disabled"}>
+                ${inStock ? "Add to Cart" : "Out of Stock"}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      cardsEl.querySelectorAll("button[data-act='add']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          upsertCart(btn.dataset.id, +1);
+        });
+      });
+    }
+
+    async function loadProducts(){
+      statusLine.textContent = "Loading products…";
+      try{
+        const res = await fetch("./products.json", { cache: "no-store" });
+        products = await res.json();
+        statusLine.textContent = `Loaded ${products.length} products`;
+        renderProducts();
+        renderCart();
+      }catch(e){
+        console.error(e);
+        statusLine.textContent = "Failed to load products.json";
+        cardsEl.innerHTML = `<div class="cartEmpty" style="margin:14px;">Could not load products.</div>`;
+        renderCart();
+      }
+    }
+
+    $("search").addEventListener("input", () => renderProducts());
+    $("sort").addEventListener("change", () => renderProducts());
+
+    $("btnClearCart").addEventListener("click", () => {
+      if (!cart.length) return;
+      if (confirm("Clear cart?")) clearCart();
+    });
+
+    $("btnCheckout").addEventListener("click", () => {
+      if (!cart.length){
+        alert("Cart is empty.");
+        return;
+      }
+      window.location.href = "checkout.html";
+    });
+
+    loadProducts();
+  </script>
 </body>
 </html>
