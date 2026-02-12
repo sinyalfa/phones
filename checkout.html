@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Checkout — CETS Mobile Sales</title>
+  <style>
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#0b1220;
+      color:#e5e7eb;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 22px;
+    }
+    .card{
+      width: min(900px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.72);
+      box-shadow: 0 26px 70px rgba(0,0,0,.55);
+      padding: 18px;
+    }
+    h1{ margin:0 0 6px; font-size: 30px; font-weight: 950; }
+    .muted{ color:#9ca3af; font-weight: 750; line-height:1.25; }
+    .box{
+      margin-top: 14px;
+      border-radius: 18px;
+      border: 1px dashed rgba(148,163,184,.26);
+      padding: 14px;
+      color:#9ca3af;
+      font-weight: 800;
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px; }
+    a, button{
+      text-decoration:none;
+      border:none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 950;
+      cursor:pointer;
+      color:white;
+      background: rgba(148,163,184,.18);
+      border: 1px solid rgba(148,163,184,.16);
+    }
+    .blue{ background: #2563eb; border-color: rgba(59,130,246,.25); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Checkout</h1>
+    <div class="muted">
+      Next step: we’ll embed Stripe Checkout here. This page will call your Cloudflare Worker to create a Checkout Session.
+    </div>
+
+    <div class="box" id="cartBox">Loading cart…</div>
+
+    <div class="row">
+      <a class="blue" href="phones.html">← Back to Shop</a>
+      <button id="btnClear">Clear cart</button>
+    </div>
+  </div>
+
+  <script>
+    const CART_KEY = "cets_phone_cart_v1";
+    function loadCart(){
+      try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
+    const cart = loadCart();
+    const box = document.getElementById("cartBox");
+
+    if (!cart.length){
+      box.textContent = "Cart is empty. Go back to the shop.";
+    } else {
+      box.textContent = `Cart items: ${cart.reduce((a,i)=>a+i.qty,0)} (Stripe embed will go here next)`;
+    }
+
+    document.getElementById("btnClear").addEventListener("click", () => {
+      if (!cart.length) return;
+      if (confirm("Clear cart?")){
+        saveCart([]);
+        location.reload();
+      }
+    });
+  </script>
+</body>
+</html>
