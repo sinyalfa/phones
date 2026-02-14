@@ -11,82 +11,202 @@
       background:#0b1220;
       color:#e5e7eb;
       min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 22px;
-    }
-    .card{
-      width: min(900px, 100%);
-      border-radius: 22px;
-      border: 1px solid rgba(148,163,184,.16);
-      background: rgba(15,23,42,.72);
-      box-shadow: 0 26px 70px rgba(0,0,0,.55);
       padding: 18px;
     }
-    h1{ margin:0 0 6px; font-size: 30px; font-weight: 950; }
-    .muted{ color:#9ca3af; font-weight: 750; line-height:1.25; }
+    .wrap{ max-width: 1120px; margin:0 auto; }
+    .top{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    h1{margin:0;font-size:34px;font-weight:950;}
+    .muted{color:#9ca3af;font-weight:800;line-height:1.25;margin-top:6px;}
+    .btn{
+      text-decoration:none;
+      border:none;border-radius:14px;padding:12px 14px;
+      font-weight:950;cursor:pointer;color:white;
+      background: rgba(148,163,184,.18);
+      border: 1px solid rgba(148,163,184,.16);
+    }
+    .blue{background:#2563eb;border-color: rgba(59,130,246,.25);}
+    .card{
+      border-radius:22px;
+      border:1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.72);
+      box-shadow: 0 26px 70px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .head{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      flex-wrap: wrap;
+    }
+    .pill{
+      display:inline-flex; gap:10px; align-items:center;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(0,0,0,.18);
+      font-weight: 900;
+      white-space:nowrap;
+      color:#cbd5e1;
+    }
+    .content{
+      padding: 16px;
+    }
     .box{
-      margin-top: 14px;
       border-radius: 18px;
       border: 1px dashed rgba(148,163,184,.26);
       padding: 14px;
       color:#9ca3af;
       font-weight: 800;
+      margin-bottom: 14px;
     }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px; }
-    a, button{
-      text-decoration:none;
-      border:none;
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-weight: 950;
-      cursor:pointer;
-      color:white;
-      background: rgba(148,163,184,.18);
-      border: 1px solid rgba(148,163,184,.16);
+    #checkoutMount{
+      border-radius: 18px;
+      overflow:hidden;
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(2,6,23,.55);
+      min-height: 520px;
     }
-    .blue{ background: #2563eb; border-color: rgba(59,130,246,.25); }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Checkout</h1>
-    <div class="muted">
-      Next step: we’ll embed Stripe Checkout here. This page will call your Cloudflare Worker to create a Checkout Session.
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Checkout</h1>
+        <div class="muted">Secure payment + shipping address via Stripe (Embedded Checkout).</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn blue" href="index.html">← Back to Shop</a>
+        <button class="btn" id="btnClear">Clear Cart</button>
+      </div>
     </div>
 
-    <div class="box" id="cartBox">Loading cart…</div>
+    <div class="card">
+      <div class="head">
+        <div class="pill" id="cartPill">🛒 Cart items: <span id="cartCount">0</span></div>
+        <div class="pill" id="statusPill">Status: <span id="statusText">Preparing…</span></div>
+      </div>
 
-    <div class="row">
-      <a class="blue" href="phones.html">← Back to Shop</a>
-      <button id="btnClear">Clear cart</button>
+      <div class="content">
+        <div class="box" id="cartBox">Loading cart…</div>
+        <div id="checkoutMount"></div>
+      </div>
     </div>
   </div>
 
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
+
   <script>
+    /**************************************************************
+     * 0) CONFIG — CHANGE THESE
+     **************************************************************/
+    const STRIPE_PUBLISHABLE_KEY = "PASTE_YOUR_PK_TEST_KEY_HERE"; // pk_test_...
+
+    // Your Cloudflare Worker endpoint (we’ll deploy next)
+    // example: https://cets-stripe-api.sinyalfa.workers.dev
+    const API_BASE = "PASTE_YOUR_WORKER_BASE_URL_HERE";
+
+    // Your GitHub pages base (used for return URL)
+    const SITE_BASE = "https://sinyalfa.github.io/phone.html";
+
+    /**************************************************************
+     * 1) CART
+     **************************************************************/
     const CART_KEY = "cets_phone_cart_v1";
     function loadCart(){
       try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
       catch { return []; }
     }
-    function saveCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
-    const cart = loadCart();
-    const box = document.getElementById("cartBox");
-
-    if (!cart.length){
-      box.textContent = "Cart is empty. Go back to the shop.";
-    } else {
-      box.textContent = `Cart items: ${cart.reduce((a,i)=>a+i.qty,0)} (Stripe embed will go here next)`;
+    function clearCart(){
+      localStorage.setItem(CART_KEY, "[]");
     }
 
-    document.getElementById("btnClear").addEventListener("click", () => {
+    const cart = loadCart();
+    const $ = (id) => document.getElementById(id);
+
+    const cartCountEl = $("cartCount");
+    const cartBox = $("cartBox");
+    const statusText = $("statusText");
+
+    cartCountEl.textContent = String(cart.reduce((a,i)=>a+i.qty,0));
+
+    $("btnClear").addEventListener("click", () => {
       if (!cart.length) return;
       if (confirm("Clear cart?")){
-        saveCart([]);
-        location.reload();
+        clearCart();
+        location.href = "index.html";
       }
     });
+
+    if (!cart.length){
+      cartBox.textContent = "Cart is empty. Go back to the shop.";
+      statusText.textContent = "Cart empty";
+      throw new Error("Cart empty");
+    }
+
+    cartBox.textContent = `Cart ready. Creating secure Stripe checkout session…`;
+
+    /**************************************************************
+     * 2) CREATE CHECKOUT SESSION (via Worker)
+     **************************************************************/
+    async function createSession(){
+      statusText.textContent = "Creating session…";
+
+      const res = await fetch(`${API_BASE}/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cart,
+          success_url: `${SITE_BASE}/success.html`,
+          cancel_url: `${SITE_BASE}/checkout.html`
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok){
+        console.error("Session create failed:", data);
+        throw new Error(data?.error || "Failed to create checkout session");
+      }
+
+      if (!data.client_secret){
+        throw new Error("Missing client_secret from server.");
+      }
+
+      return data.client_secret;
+    }
+
+    /**************************************************************
+     * 3) MOUNT EMBEDDED CHECKOUT
+     **************************************************************/
+    async function mountEmbeddedCheckout(){
+      try{
+        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+
+        const clientSecret = await createSession();
+
+        statusText.textContent = "Loading checkout…";
+
+        const checkout = await stripe.initEmbeddedCheckout({
+          clientSecret
+        });
+
+        checkout.mount("#checkoutMount");
+
+        statusText.textContent = "Ready";
+      }catch(e){
+        console.error(e);
+        statusText.textContent = "Error";
+        cartBox.textContent = `Checkout error: ${e.message}`;
+      }
+    }
+
+    mountEmbeddedCheckout();
   </script>
 </body>
 </html>
