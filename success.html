@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Order Success — CETS Mobile Sales</title>
+  <style>
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#0b1220;
+      color:#e5e7eb;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .card{
+      width:min(860px,100%);
+      border-radius:22px;
+      border:1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.72);
+      box-shadow: 0 26px 70px rgba(0,0,0,.55);
+      padding:18px;
+    }
+    h1{margin:0 0 6px;font-size:32px;font-weight:950;}
+    .muted{color:#9ca3af;font-weight:800;line-height:1.25;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+    a,button{
+      text-decoration:none;border:none;border-radius:14px;padding:12px 14px;
+      font-weight:950;cursor:pointer;color:white;
+      background: rgba(148,163,184,.18);
+      border: 1px solid rgba(148,163,184,.16);
+    }
+    .blue{background:#2563eb;border-color: rgba(59,130,246,.25);}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>✅ Payment successful</h1>
+    <div class="muted">
+      Thanks! Your order was received. You’ll also get a receipt from Stripe.
+    </div>
+
+    <div class="row">
+      <a class="blue" href="index.html">← Back to Shop</a>
+      <button id="btnClear">Clear cart</button>
+    </div>
+  </div>
+
+  <script>
+    const CART_KEY = "cets_phone_cart_v1";
+    document.getElementById("btnClear").addEventListener("click", () => {
+      localStorage.setItem(CART_KEY, "[]");
+      alert("Cart cleared.");
+    });
+  </script>
+</body>
+</html>
