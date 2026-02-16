@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>CETS Mobile Sales — Checkout</title>
 
+  <!-- Stripe -->
   <script src="https://js.stripe.com/v3/"></script>
 
   <style>
@@ -16,10 +17,10 @@
       --text:#e5e7eb;
       --muted:#9ca3af;
       --shadow: 0 30px 90px rgba(0,0,0,.55);
-      --ring: rgba(59,130,246,.35);
       --blue:#3b82f6;
       --green:#10b981;
       --red:#ef4444;
+      --amber:#f59e0b;
     }
 
     *{box-sizing:border-box}
@@ -77,6 +78,7 @@
     .btn:active{ transform: translateY(0px); box-shadow: 0 10px 18px rgba(0,0,0,.35); }
     .btn.blue{ background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.90)); border-color: rgba(59,130,246,.25); }
     .btn.gray{ background: rgba(148,163,184,.12); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
 
     .card{
       background: linear-gradient(180deg, var(--card), rgba(8, 15, 35, 0.74));
@@ -114,6 +116,7 @@
     }
     .dot.ok{ background: var(--green); box-shadow: 0 0 14px rgba(16,185,129,.45); }
     .dot.bad{ background: var(--red); box-shadow: 0 0 14px rgba(239,68,68,.55); }
+    .dot.warn{ background: var(--amber); box-shadow: 0 0 14px rgba(245,158,11,.45); }
 
     .card-body{
       padding: 16px 18px 18px;
@@ -127,12 +130,12 @@
       background: rgba(0,0,0,.25);
       font-weight: 900;
       color: rgba(226,232,240,.95);
+      word-break: break-word;
     }
     .msg.ok{ border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.10); }
     .msg.bad{ border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.10); }
     .msg.warn{ border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.08); }
 
-    /* Stripe embedded checkout container */
     #checkout{
       min-height: 520px;
       border-radius: 18px;
@@ -140,6 +143,14 @@
       border: 1px solid rgba(148,163,184,.14);
       background: rgba(0,0,0,.18);
       padding: 10px;
+    }
+
+    .tiny{
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(148,163,184,.95);
+      line-height: 1.45;
     }
 
     @media (max-width: 820px){
@@ -163,13 +174,13 @@
 
     <div class="card">
       <div class="card-head">
-        <div class="pill" id="cartPill">
+        <div class="pill">
           <span class="dot" id="cartDot"></span>
           <span id="cartText">Cart items: 0</span>
         </div>
 
-        <div class="pill" id="statusPill">
-          <span class="dot" id="statusDot"></span>
+        <div class="pill">
+          <span class="dot warn" id="statusDot"></span>
           <span id="statusText">Status: Loading…</span>
         </div>
       </div>
@@ -177,15 +188,17 @@
       <div class="card-body">
         <div id="msg" class="msg warn">Preparing checkout…</div>
         <div id="checkout"></div>
+        <div class="tiny" id="debugLine"></div>
       </div>
     </div>
   </div>
 
   <script>
     /************************************************************
-     * CONFIG (CHANGE ONLY THE PK KEY)
+     * CONFIG — CHANGE ONLY THIS ONE LINE (pk_test...)
      ************************************************************/
     const STRIPE_PUBLISHABLE_KEY = "pk_test_REPLACE_ME"; // <-- put your pk_test_... here
+
     const API_BASE = "https://cets-stripe-api.sinyalfa.workers.dev";
     const SUCCESS_URL = "https://sinyalfa.github.io/phones/success.html";
     const CANCEL_URL  = "https://sinyalfa.github.io/phones/checkout.html";
@@ -195,6 +208,7 @@
      ************************************************************/
     const $ = (id) => document.getElementById(id);
     const msg = $("msg");
+    const debugLine = $("debugLine");
 
     const cartDot = $("cartDot");
     const cartText = $("cartText");
@@ -203,16 +217,26 @@
     const statusText = $("statusText");
 
     $("btnClear").addEventListener("click", () => {
-      localStorage.removeItem("cart");
-      localStorage.removeItem("cets_cart");
-      localStorage.removeItem("phones_cart");
+      // clear common localStorage + sessionStorage cart keys
+      const keys = ["cart","phones_cart","cets_cart","shoppingCart","CART","store_cart"];
+      keys.forEach(k => localStorage.removeItem(k));
+      keys.forEach(k => sessionStorage.removeItem(k));
+      // also clear anything cart-like (optional safe sweep)
+      for (const k of Object.keys(localStorage)){
+        if (k.toLowerCase().includes("cart")) localStorage.removeItem(k);
+      }
+      for (const k of Object.keys(sessionStorage)){
+        if (k.toLowerCase().includes("cart")) sessionStorage.removeItem(k);
+      }
       location.reload();
     });
 
     function setStatus(kind, text){
-      statusDot.classList.remove("ok","bad");
+      statusDot.classList.remove("ok","bad","warn");
       if (kind === "ok") statusDot.classList.add("ok");
       if (kind === "bad") statusDot.classList.add("bad");
+      if (kind === "warn") statusDot.classList.add("warn");
+
       statusText.textContent = text;
 
       msg.className = "msg " + (kind === "ok" ? "ok" : kind === "bad" ? "bad" : "warn");
@@ -222,31 +246,93 @@
     function setCartCount(n){
       cartText.textContent = `Cart items: ${n}`;
       cartDot.classList.toggle("ok", n > 0);
+      cartDot.classList.toggle("bad", n === 0);
     }
 
     /************************************************************
-     * CART LOADING (supports common localStorage keys + qty fields)
+     * CART LOADER (ROBUST)
+     * - Tries known keys first
+     * - Then scans ALL localStorage + sessionStorage for cart-like arrays
      ************************************************************/
-    function loadCart(){
-      const tryKeys = ["cart", "cets_cart", "phones_cart"];
-      for (const k of tryKeys){
-        const raw = localStorage.getItem(k);
-        if (!raw) continue;
-        try {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
-          if (parsed && Array.isArray(parsed.items)) return parsed.items;
-        } catch {}
+    function parseCartArray(raw) {
+      if (!raw) return null;
+      try {
+        const p = JSON.parse(raw);
+
+        const arr =
+          Array.isArray(p) ? p :
+          Array.isArray(p?.items) ? p.items :
+          Array.isArray(p?.cart) ? p.cart :
+          Array.isArray(p?.data) ? p.data :
+          null;
+
+        if (!arr || !arr.length) return null;
+
+        // must contain at least one item with an id-ish field
+        const ok = arr.some(it => it?.id || it?.sku || it?.product_id);
+        return ok ? arr : null;
+      } catch {
+        return null;
       }
-      return [];
+    }
+
+    function scanStorage(store, storeName){
+      let best = null;
+
+      for (const k of Object.keys(store)) {
+        const raw = store.getItem(k);
+        const arr = parseCartArray(raw);
+        if (!arr) continue;
+
+        // score by how cart-like it is
+        const score = arr.reduce((s, it) => {
+          const hasId = !!(it?.id || it?.sku || it?.product_id);
+          const hasQty = Number.isFinite(Number(it?.quantity ?? it?.qty ?? it?.count ?? 1));
+          return s + (hasId ? 2 : 0) + (hasQty ? 1 : 0);
+        }, 0);
+
+        if (!best || score > best.score) best = { key: k, arr, score, storeName };
+      }
+
+      return best;
+    }
+
+    function loadCart(){
+      // 1) Preferred keys first
+      const preferredKeys = ["cart", "phones_cart", "cets_cart", "shoppingCart", "CART", "store_cart"];
+      for (const k of preferredKeys){
+        const rawL = localStorage.getItem(k);
+        const arrL = parseCartArray(rawL);
+        if (arrL) return { arr: arrL, source: `localStorage:${k}` };
+
+        const rawS = sessionStorage.getItem(k);
+        const arrS = parseCartArray(rawS);
+        if (arrS) return { arr: arrS, source: `sessionStorage:${k}` };
+      }
+
+      // 2) Scan everything
+      const bestLocal = scanStorage(localStorage, "localStorage");
+      const bestSess  = scanStorage(sessionStorage, "sessionStorage");
+
+      const best = (!bestLocal && !bestSess) ? null :
+                   (!bestSess) ? bestLocal :
+                   (!bestLocal) ? bestSess :
+                   (bestSess.score > bestLocal.score ? bestSess : bestLocal);
+
+      if (best){
+        console.log("✅ Using cart from:", best.storeName, best.key, best.arr);
+        return { arr: best.arr, source: `${best.storeName}:${best.key}` };
+      }
+
+      return { arr: [], source: "none" };
     }
 
     // Normalize to what your Worker expects: [{id, quantity}]
     function normalizeCartItems(cart){
-      return cart
+      return (cart || [])
         .map(it => ({
-          id: it.id,
-          quantity: Number(it.quantity ?? it.qty ?? 1)
+          id: it.id || it.sku || it.product_id,
+          quantity: Number(it.quantity ?? it.qty ?? it.count ?? 1)
         }))
         .filter(x => x.id && Number.isFinite(x.quantity) && x.quantity > 0);
     }
@@ -279,14 +365,17 @@
      * STRIPE EMBEDDED CHECKOUT INIT
      ************************************************************/
     async function boot(){
-      const cart = loadCart();
-      const items = normalizeCartItems(cart);
+      const { arr: rawCart, source } = loadCart();
+      const items = normalizeCartItems(rawCart);
 
       const totalQty = items.reduce((a, x) => a + x.quantity, 0);
       setCartCount(totalQty);
 
+      debugLine.textContent =
+        `Cart source: ${source} • Items detected: ${items.length} • API: ${API_BASE}`;
+
       if (!items.length){
-        setStatus("bad", "Your cart is empty. Go back and add a phone first.");
+        setStatus("bad", "Your cart is empty (checkout couldn't find it). Go back and add a phone, then try again.");
         return;
       }
 
