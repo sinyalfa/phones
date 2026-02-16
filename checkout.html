@@ -3,210 +3,314 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Checkout — CETS Mobile Sales</title>
+  <title>CETS Mobile Sales — Checkout</title>
+
+  <script src="https://js.stripe.com/v3/"></script>
+
   <style>
+    :root{
+      --bg1:#07102a;
+      --bg2:#020617;
+      --card: rgba(17, 29, 56, 0.72);
+      --border: rgba(148, 163, 184, 0.18);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --shadow: 0 30px 90px rgba(0,0,0,.55);
+      --ring: rgba(59,130,246,.35);
+      --blue:#3b82f6;
+      --green:#10b981;
+      --red:#ef4444;
+    }
+
+    *{box-sizing:border-box}
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#0b1220;
-      color:#e5e7eb;
+      color:var(--text);
+      background: radial-gradient(circle at 20% 10%, #12214b 0%, var(--bg1) 30%, var(--bg2) 80%);
       min-height:100vh;
-      padding: 18px;
+      padding: 28px 18px;
     }
-    .wrap{ max-width: 1120px; margin:0 auto; }
-    .top{
-      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-      margin-bottom: 12px;
+
+    .wrap{ max-width: 1120px; margin: 0 auto; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
     }
-    h1{margin:0;font-size:34px;font-weight:950;}
-    .muted{color:#9ca3af;font-weight:800;line-height:1.25;margin-top:6px;}
+
+    .title{
+      font-size: 40px;
+      font-weight: 950;
+      margin: 0;
+      letter-spacing: .3px;
+    }
+    .subtitle{
+      margin-top: 6px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     .btn{
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      padding: 0 14px;
+      font-weight: 900;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      user-select:none;
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
       text-decoration:none;
-      border:none;border-radius:14px;padding:12px 14px;
-      font-weight:950;cursor:pointer;color:white;
-      background: rgba(148,163,184,.18);
-      border: 1px solid rgba(148,163,184,.16);
     }
-    .blue{background:#2563eb;border-color: rgba(59,130,246,.25);}
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(0,0,0,.45); }
+    .btn:active{ transform: translateY(0px); box-shadow: 0 10px 18px rgba(0,0,0,.35); }
+    .btn.blue{ background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.90)); border-color: rgba(59,130,246,.25); }
+    .btn.gray{ background: rgba(148,163,184,.12); }
+
     .card{
-      border-radius:22px;
-      border:1px solid rgba(148,163,184,.16);
-      background: rgba(15,23,42,.72);
-      box-shadow: 0 26px 70px rgba(0,0,0,.55);
-      overflow:hidden;
+      background: linear-gradient(180deg, var(--card), rgba(8, 15, 35, 0.74));
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
     }
-    .head{
-      padding: 14px 16px;
+
+    .card-head{
+      padding: 16px 18px;
       border-bottom: 1px solid rgba(148,163,184,.12);
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
       flex-wrap: wrap;
     }
+
     .pill{
-      display:inline-flex; gap:10px; align-items:center;
-      padding: 10px 12px;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.16);
-      background: rgba(0,0,0,.18);
-      font-weight: 900;
+      background: rgba(0,0,0,.25);
+      border: 1px solid var(--border);
+      font-weight: 950;
       white-space:nowrap;
-      color:#cbd5e1;
     }
-    .content{
-      padding: 16px;
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background: var(--blue);
+      box-shadow: 0 0 14px rgba(59,130,246,.45);
     }
-    .box{
-      border-radius: 18px;
-      border: 1px dashed rgba(148,163,184,.26);
-      padding: 14px;
-      color:#9ca3af;
-      font-weight: 800;
-      margin-bottom: 14px;
+    .dot.ok{ background: var(--green); box-shadow: 0 0 14px rgba(16,185,129,.45); }
+    .dot.bad{ background: var(--red); box-shadow: 0 0 14px rgba(239,68,68,.55); }
+
+    .card-body{
+      padding: 16px 18px 18px;
     }
-    #checkoutMount{
-      border-radius: 18px;
-      overflow:hidden;
-      border: 1px solid rgba(148,163,184,.14);
-      background: rgba(2,6,23,.55);
+
+    .msg{
+      margin-bottom: 12px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(0,0,0,.25);
+      font-weight: 900;
+      color: rgba(226,232,240,.95);
+    }
+    .msg.ok{ border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.10); }
+    .msg.bad{ border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.10); }
+    .msg.warn{ border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.08); }
+
+    /* Stripe embedded checkout container */
+    #checkout{
       min-height: 520px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(0,0,0,.18);
+      padding: 10px;
+    }
+
+    @media (max-width: 820px){
+      .title{ font-size: 32px; }
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="top">
+    <div class="topbar">
       <div>
-        <h1>Checkout</h1>
-        <div class="muted">Secure payment + shipping address via Stripe (Embedded Checkout).</div>
+        <h1 class="title">Checkout</h1>
+        <div class="subtitle">Secure payment + shipping address via Stripe (Embedded Checkout).</div>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <a class="btn blue" href="index.html">← Back to Shop</a>
-        <button class="btn" id="btnClear">Clear Cart</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn blue" href="https://sinyalfa.github.io/phones/">← Back to Shop</a>
+        <button class="btn gray" id="btnClear">Clear Cart</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="head">
-        <div class="pill" id="cartPill">🛒 Cart items: <span id="cartCount">0</span></div>
-        <div class="pill" id="statusPill">Status: <span id="statusText">Preparing…</span></div>
+      <div class="card-head">
+        <div class="pill" id="cartPill">
+          <span class="dot" id="cartDot"></span>
+          <span id="cartText">Cart items: 0</span>
+        </div>
+
+        <div class="pill" id="statusPill">
+          <span class="dot" id="statusDot"></span>
+          <span id="statusText">Status: Loading…</span>
+        </div>
       </div>
 
-      <div class="content">
-        <div class="box" id="cartBox">Loading cart…</div>
-        <div id="checkoutMount"></div>
+      <div class="card-body">
+        <div id="msg" class="msg warn">Preparing checkout…</div>
+        <div id="checkout"></div>
       </div>
     </div>
   </div>
 
-  <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3/"></script>
-
   <script>
-    /**************************************************************
-     * 0) CONFIG — CHANGE THESE
-     **************************************************************/
-    const STRIPE_PUBLISHABLE_KEY = "pk_live_51T0fv2P5Fv92QeLmJ4DYLrXom8a1GkFm92ldjQrxiGZeEbx1C0o2gexi5InogZ1FNaYQbtPZxiXmYR2jHcncnryi00kQid9jej"; // pk_test_...
+    /************************************************************
+     * CONFIG (CHANGE ONLY THE PK KEY)
+     ************************************************************/
+    const STRIPE_PUBLISHABLE_KEY = "pk_test_REPLACE_ME"; // <-- put your pk_test_... here
+    const API_BASE = "https://cets-stripe-api.sinyalfa.workers.dev";
+    const SUCCESS_URL = "https://sinyalfa.github.io/phones/success.html";
+    const CANCEL_URL  = "https://sinyalfa.github.io/phones/checkout.html";
 
-    // Your Cloudflare Worker endpoint (we’ll deploy next)
-    // example: https://cets-stripe-api.sinyalfa.workers.dev
-    const API_BASE = "PASTE_YOUR_WORKER_BASE_URL_HERE";
-
-    // Your GitHub pages base (used for return URL)
-    const SITE_BASE = "https://sinyalfa.github.io/phone.html";
-
-    /**************************************************************
-     * 1) CART
-     **************************************************************/
-    const CART_KEY = "cets_phone_cart_v1";
-    function loadCart(){
-      try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
-      catch { return []; }
-    }
-    function clearCart(){
-      localStorage.setItem(CART_KEY, "[]");
-    }
-
-    const cart = loadCart();
+    /************************************************************
+     * DOM
+     ************************************************************/
     const $ = (id) => document.getElementById(id);
+    const msg = $("msg");
 
-    const cartCountEl = $("cartCount");
-    const cartBox = $("cartBox");
+    const cartDot = $("cartDot");
+    const cartText = $("cartText");
+
+    const statusDot = $("statusDot");
     const statusText = $("statusText");
 
-    cartCountEl.textContent = String(cart.reduce((a,i)=>a+i.qty,0));
-
     $("btnClear").addEventListener("click", () => {
-      if (!cart.length) return;
-      if (confirm("Clear cart?")){
-        clearCart();
-        location.href = "index.html";
-      }
+      localStorage.removeItem("cart");
+      localStorage.removeItem("cets_cart");
+      localStorage.removeItem("phones_cart");
+      location.reload();
     });
 
-    if (!cart.length){
-      cartBox.textContent = "Cart is empty. Go back to the shop.";
-      statusText.textContent = "Cart empty";
-      throw new Error("Cart empty");
+    function setStatus(kind, text){
+      statusDot.classList.remove("ok","bad");
+      if (kind === "ok") statusDot.classList.add("ok");
+      if (kind === "bad") statusDot.classList.add("bad");
+      statusText.textContent = text;
+
+      msg.className = "msg " + (kind === "ok" ? "ok" : kind === "bad" ? "bad" : "warn");
+      msg.textContent = text;
     }
 
-    cartBox.textContent = `Cart ready. Creating secure Stripe checkout session…`;
+    function setCartCount(n){
+      cartText.textContent = `Cart items: ${n}`;
+      cartDot.classList.toggle("ok", n > 0);
+    }
 
-    /**************************************************************
-     * 2) CREATE CHECKOUT SESSION (via Worker)
-     **************************************************************/
-    async function createSession(){
-      statusText.textContent = "Creating session…";
+    /************************************************************
+     * CART LOADING (supports common localStorage keys + qty fields)
+     ************************************************************/
+    function loadCart(){
+      const tryKeys = ["cart", "cets_cart", "phones_cart"];
+      for (const k of tryKeys){
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+          if (parsed && Array.isArray(parsed.items)) return parsed.items;
+        } catch {}
+      }
+      return [];
+    }
 
+    // Normalize to what your Worker expects: [{id, quantity}]
+    function normalizeCartItems(cart){
+      return cart
+        .map(it => ({
+          id: it.id,
+          quantity: Number(it.quantity ?? it.qty ?? 1)
+        }))
+        .filter(x => x.id && Number.isFinite(x.quantity) && x.quantity > 0);
+    }
+
+    /************************************************************
+     * WORKER CALL: Create Stripe Embedded Checkout session
+     ************************************************************/
+    async function createCheckoutSession(items){
       const res = await fetch(`${API_BASE}/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cart,
-          success_url: `${SITE_BASE}/success.html`,
-          cancel_url: `${SITE_BASE}/checkout.html`
-        })
+          items,
+          success_url: SUCCESS_URL,
+          cancel_url: CANCEL_URL
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok){
-        console.error("Session create failed:", data);
-        throw new Error(data?.error || "Failed to create checkout session");
+        throw new Error(data.error || "Failed to create checkout session");
       }
-
       if (!data.client_secret){
-        throw new Error("Missing client_secret from server.");
+        throw new Error("Worker response missing client_secret");
       }
-
       return data.client_secret;
     }
 
-    /**************************************************************
-     * 3) MOUNT EMBEDDED CHECKOUT
-     **************************************************************/
-    async function mountEmbeddedCheckout(){
-      try{
-        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    /************************************************************
+     * STRIPE EMBEDDED CHECKOUT INIT
+     ************************************************************/
+    async function boot(){
+      const cart = loadCart();
+      const items = normalizeCartItems(cart);
 
-        const clientSecret = await createSession();
+      const totalQty = items.reduce((a, x) => a + x.quantity, 0);
+      setCartCount(totalQty);
 
-        statusText.textContent = "Loading checkout…";
-
-        const checkout = await stripe.initEmbeddedCheckout({
-          clientSecret
-        });
-
-        checkout.mount("#checkoutMount");
-
-        statusText.textContent = "Ready";
-      }catch(e){
-        console.error(e);
-        statusText.textContent = "Error";
-        cartBox.textContent = `Checkout error: ${e.message}`;
+      if (!items.length){
+        setStatus("bad", "Your cart is empty. Go back and add a phone first.");
+        return;
       }
+
+      if (!STRIPE_PUBLISHABLE_KEY || STRIPE_PUBLISHABLE_KEY.includes("pk_live_51T0fv2P5Fv92QeLmJ4DYLrXom8a1GkFm92ldjQrxiGZeEbx1C0o2gexi5InogZ1FNaYQbtPZxiXmYR2jHcncnryi00kQid9jej")){
+        setStatus("bad", "Missing Stripe publishable key (pk_test_...). Add it in checkout.html.");
+        return;
+      }
+
+      setStatus("warn", "Creating secure Stripe session…");
+
+      const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+
+      const clientSecret = await createCheckoutSession(items);
+
+      setStatus("ok", "Checkout ready. Complete payment below.");
+
+      const embedded = await stripe.initEmbeddedCheckout({ clientSecret });
+      embedded.mount("#checkout");
     }
 
-    mountEmbeddedCheckout();
+    boot().catch(err => {
+      setStatus("bad", "Checkout error: " + (err?.message || "Unknown error"));
+      console.error(err);
+    });
   </script>
 </body>
 </html>
